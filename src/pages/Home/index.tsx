@@ -22,61 +22,60 @@ interface Coffee {
 export function Home() {
   const theme = useTheme();
   const [coffees, setCoffees] = useState<Coffee[]>([]);
+  const [filteredCoffees, setFilteredCoffees] = useState<Coffee[]>([]);
 
   useEffect(() => {
     async function fetchCoffees() {
       const response = await api('/coffees');
-      setCoffees(response.data);
-
-      console.log({coffees: response.data});
+      const sortedCoffees = response.data.sort((a: Coffee, b: Coffee) => a.title.localeCompare(b.title));
+      setCoffees(sortedCoffees);
+      setFilteredCoffees(sortedCoffees);
     }
     fetchCoffees();
   }, []);
 
-
-  
   function incrementQuantity(id: string) {
     setCoffees((prevState) =>
-      prevState.map((coffee) => {
-        if (coffee.id === id) {
-          return {
-            ...coffee,
-            quantity: coffee.quantity + 1,
-          }
-        }
-        return coffee
-      }
-      ),
+      prevState.map((coffee) =>
+        coffee.id === id ? { ...coffee, quantity: coffee.quantity + 1 } : coffee
+      )
+    );
+    setFilteredCoffees((prevState) =>
+      prevState.map((coffee) =>
+        coffee.id === id ? { ...coffee, quantity: coffee.quantity + 1 } : coffee
+      )
     );
   }
 
   function decrementQuantity(id: string) {
     setCoffees((prevState) =>
-      prevState.map((coffee) => {
-        if (coffee.id === id && coffee.quantity > 0) {
-          return {
-            ...coffee,
-            quantity: coffee.quantity - 1,
-          }
-        }
-        return coffee
-      }),
+      prevState.map((coffee) =>
+        coffee.id === id && coffee.quantity > 0 ? { ...coffee, quantity: coffee.quantity - 1 } : coffee
+      )
+    );
+    setFilteredCoffees((prevState) =>
+      prevState.map((coffee) =>
+        coffee.id === id && coffee.quantity > 0 ? { ...coffee, quantity: coffee.quantity - 1 } : coffee
+      )
     );
   }
 
   function handleFavoriteCoffee(id: string) {
     setCoffees((prevState) =>
-      prevState.map((coffee) => {
-        if (coffee.id === id) {
-          return {
-            ...coffee,
-            favorite: !coffee.favorite,
-          }
-        }
-        return coffee
-      }),
-    )
-    
+      prevState.map((coffee) =>
+        coffee.id === id ? { ...coffee, favorite: !coffee.favorite } : coffee
+      )
+    );
+    setFilteredCoffees((prevState) =>
+      prevState.map((coffee) =>
+        coffee.id === id ? { ...coffee, favorite: !coffee.favorite } : coffee
+      )
+    );
+  }
+
+  function handleCategoryFilter(tag: string) {
+    const filtered = coffees.filter((coffee) => coffee.tags.includes(tag));
+    setFilteredCoffees(filtered);
   }
 
   return (
@@ -86,7 +85,6 @@ export function Home() {
           <div>
             <Heading>
               <h1>Encontre o café perfeito para qualquer hora do dia</h1>
-
               <span>
                 Com o Coffee Delivery você recebe seu café onde estiver, a
                 qualquer hora
@@ -143,25 +141,27 @@ export function Home() {
       </Hero>
 
       <CoffeeList>
-
         <h2>Nossos cafés</h2>
+
         <Navbar>
           <Radio
-            onClick={() => {}}
+            onClick={() => handleCategoryFilter("tradicional")}
             isSelected={false}
             value="tradicional"
           >
             <span>Tradicional</span>
           </Radio>
+
           <Radio
-            onClick={() => {}}
+            onClick={() => handleCategoryFilter("gelado")}
             isSelected={false}
             value="gelado"
           >
             <span>Gelado</span>
           </Radio>
+
           <Radio
-            onClick={() => {}}
+            onClick={() => handleCategoryFilter("com leite")}
             isSelected={false}
             value="com leite"
           >
@@ -169,19 +169,18 @@ export function Home() {
           </Radio>
         </Navbar>
 
-
         <div>
-          {coffees.map((coffee) => (
+          {filteredCoffees.map((coffee) => (
             <CoffeeCard
               key={coffee.id}
               coffee={coffee}
               incrementQuantity={incrementQuantity}
               decrementQuantity={decrementQuantity}
-              handleFavoriteCoffee={handleFavoriteCoffee}
+              handleFavoriteCoffee={() => handleFavoriteCoffee(coffee.id)}
             />
           ))}
         </div>
       </CoffeeList>
     </div>
-  )
+  );
 }
